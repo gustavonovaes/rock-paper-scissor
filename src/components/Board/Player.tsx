@@ -1,3 +1,4 @@
+import { randomInt } from '../../utils/random';
 export type PlayerType = "rock" | "paper" | "scissor";
 export type Direction = "top" | "right" | "bottom" | "left";
 export const OpositeDirectionMap = {
@@ -19,12 +20,12 @@ export interface IPlayer {
   y: number;
   size: number;
   direction: Direction;
-  status: "moving" | "collided" | "destroyed";
 }
 
-export function Player({ status, type, x, y, size }: IPlayer) {
-  const emoji = status === "collided" ? "💥" : TypeEmojiMap[type];
+export function Player({  type, x, y, size }: IPlayer) {
+  const emoji = TypeEmojiMap[type];
   const [top, left] = [y * size, x * size];
+  const angle = randomInt(-20, 20);
 
   return (
     <div 
@@ -34,7 +35,8 @@ export function Player({ status, type, x, y, size }: IPlayer) {
         fontSize: `${size * .8}px`,
         height: `${size}px`,
         top: `${(top)}px`,
-        left: `${(left)}px`
+        left: `${(left)}px`,
+        transform: `rotate(${angle}deg)`,
       }}
     >
       <span>{emoji}</span>
