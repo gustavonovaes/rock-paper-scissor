@@ -21,10 +21,9 @@ export function Board({ playerSize, size, players }: BoardProp) {
         background: `conic-gradient(from 90deg at 1px 1px, #fff 90deg, #f2f2f2 0) 0 0/${playerSize}px ${playerSize}px`
       }}
     >
-      {players.map(({ status, type, x, y, direction }) => (
+      {players.map(({ type, x, y, direction }) => (
         <Player
           key={randomId()}
-          status={status}
           size={playerSize}
           type={type}
           x={x}

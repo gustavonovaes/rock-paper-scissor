@@ -7,10 +7,12 @@ import { randomInt } from './utils/random';
 
 import './App.css'
 
-const DEFAULT_BOARD_SIZE = 20;
-const DEFAULT_PLAYER_SIZE = 22;
-const DEFAULT_PLAYERS_COUNT = 15;
-const DEFAULT_CLOCK = 1000 / 60;
+const DEFAULT_BOARD_SIZE = 15;
+const DEFAULT_PLAYER_SIZE = 24;
+const DEFAULT_PLAYERS_COUNT = 12;
+const DEFAULT_CLOCK = 1000 / 8;
+
+const DESTRUCTION_MODE = false;
 
 function updatePlayers(players: IPlayer[], boardSize: number) {
   const newPlayers = players
@@ -24,17 +26,17 @@ function updatePlayers(players: IPlayer[], boardSize: number) {
       }
 
       if (player.x > boardSize - 1) {
-        player.x = boardSize - 1;
+        player.x = boardSize - 2;
         player.direction = "left";
       }
 
       if (player.x < 0) {
-        player.x = 0;
+        player.x = 1;
         player.direction = "right";
       }
 
       if (player.y > boardSize - 1) {
-        player.y = boardSize - 1;
+        player.y = boardSize - 2;
         player.direction = "top";
       }
 
@@ -47,38 +49,41 @@ function updatePlayers(players: IPlayer[], boardSize: number) {
     });
 
   return newPlayers.map((player, index, players) => {
-    if (player.status == "collided") {
-      player.status = "destroyed";
+    const playersCollidedKeys = players.map((item, itemIndex) => {
+      if (index === itemIndex) return -1;
+      if (player.direction === "right" && player.x + 1 === item.x && player.y === item.y && item.direction === "left") return itemIndex;
+      else if (player.direction === "left" && player.x - 1 === item.x && player.y === item.y && item.direction === "right") return itemIndex;
+      else if (player.direction === "bottom" && player.y + 1 === item.y && player.x === item.x && item.direction === "top") return itemIndex;
+      else if (player.direction === "top" && player.y - 1 === item.y && player.x === item.x && item.direction === "bottom") return itemIndex;
+      else if (player.direction === "right" && player.x + 1 === item.x && player.y === item.y && item.x === boardSize - 1) return itemIndex;
+      else if (player.direction === "left" && player.x - 1 === item.x && player.y === item.y && item.x === 0) return itemIndex;
+      else if (player.direction === "bottom" && player.y + 1 === item.y && player.x === item.x && item.y === boardSize - 1) return itemIndex;
+      else if (player.direction === "top" && player.y - 1 === item.y && player.x === item.x && item.y === 0) return itemIndex;
+      else if (player.x === item.x && player.y === item.y) return itemIndex;
+      return -1;
+    }).filter(item => item >= 0);
+
+    if (!playersCollidedKeys.length) {
       return player;
     }
 
-    const playerCollidedIndex = players.findIndex((item, itemIndex) => {
-      if (index === itemIndex) return false;
-      return player.x === item.x && player.y === item.y
-    });
+    playersCollidedKeys.forEach(playerCollidedIndex => {
+      const playerCollided = players[playerCollidedIndex];
 
-    if (playerCollidedIndex === -1) {
-      player.status = "moving";
-      return player;
-    }
+      const looseCollision = (player.type == "rock" && playerCollided.type === "paper")
+        || (player.type == "paper" && playerCollided.type === "scissor")
+        || (player.type == "scissor" && playerCollided.type === "rock")
 
-    const playerCollided = players[playerCollidedIndex];
+      if (!looseCollision) {
+        return;
+      }
 
-    // Changes the player axis direction
-    const invalidDirections = [player.direction, OpositeDirectionMap[playerCollided.direction]];
-    const directionsAvaliable = ["top", "left", "right", "bottom"].filter(direction => invalidDirections.includes(direction as Direction));
-    player.direction = directionsAvaliable[randomInt(0, directionsAvaliable.length - 1)] as Direction;
-
-    if (player.type == "rock" && playerCollided.type === "paper") {
-      player.status = "collided";
-    } else if (player.type == "paper" && playerCollided.type === "scissor") {
-      player.status = "collided";
-    } else if (player.type == "scissor" && playerCollided.type === "rock") {
-      player.status = "collided";
-    }
+      player.type = playerCollided.type;
+    })
 
     return player;
-  }).filter(player => player.status !== "destroyed");
+
+  });
 }
 
 function checkWinner(players: IPlayer[]): PlayerType | false {
@@ -263,7 +268,6 @@ function generatePlayer(boardSize: number): IPlayer {
     x: randomInt(0, boardSize - 1),
     y: randomInt(0, boardSize - 1),
     type: ["rock", "paper", "scissor"][randomInt(0, 2)] as PlayerType,
-    status: "moving"
   }
 }
 
