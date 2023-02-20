@@ -8,7 +8,9 @@ import { randomInt } from './utils/random';
 import './App.css'
 
 const DEFAULT_BOARD_SIZE = 20;
+const DEFAULT_PLAYER_SIZE = 22;
 const DEFAULT_PLAYERS_COUNT = 15;
+const DEFAULT_CLOCK = 1000 / 60;
 
 function updatePlayers(players: IPlayer[], boardSize: number) {
   const newPlayers = players
@@ -99,7 +101,9 @@ function checkWinner(players: IPlayer[]): PlayerType | false {
 function App() {
   const [frame, setFrame] = useState(0);
   const [winner, setWinner] = useState<PlayerType | false>(false);
+  const [speed, setSpeed] = useState<number>(DEFAULT_CLOCK);
   const [boardSize, setBoardSize] = useState<number>(DEFAULT_BOARD_SIZE);
+  const [playerSize, setPlayerSize] = useState<number>(DEFAULT_PLAYER_SIZE);
   const [playersCount, setPlayersCount] = useState<number>(DEFAULT_PLAYERS_COUNT);
   const players = useRef<IPlayer[]>([]);
   const maxPlayers = (boardSize * boardSize) / 2;
@@ -110,7 +114,7 @@ function App() {
 
   const { pause, step, resume } = useInterval(() => {
     forceRender();
-  }, 280);
+  }, speed);
 
   const reset = () => {
     players.current = generatePlayers(playersCount, boardSize);
@@ -143,6 +147,14 @@ function App() {
     setBoardSize(parseInt(event.target.value))
   }, 280, { leading: false, trailing: true }), []);
 
+  const handleChangePlayerSize = useCallback(debounce((event) => {
+    setPlayerSize(parseInt(event.target.value))
+  }, 280, { leading: false, trailing: true }), []);
+
+  const handleChangeSpeed = useCallback(debounce((event) => {
+    setSpeed(parseInt(event.target.value))
+  }, 280, { leading: false, trailing: true }), []);
+
   const handleChangePlayersCount = useCallback(debounce((event) => {
     const newPlayersCount = parseInt(event.target.value);
     setPlayersCount(newPlayersCount);
@@ -151,47 +163,67 @@ function App() {
 
   return (
     <div className="App">
+      {winner && <h1>Victory of {TypeEmojiMap[winner]}!</h1>}
+
+      <Board
+        playerSize={playerSize}
+        size={boardSize}
+        players={players.current}
+      />
+      <div>
+        <label>Frame {frame}</label>
+      </div>
+
       <div className='controls'>
         <div>
           <label>
             <p>Board Size: {boardSize}</p>
             <input
-              disabled={!!winner}
               type="range"
               defaultValue={boardSize}
               onChange={handleChangeBoardSize}
-              step="0.1"
+              step="1"
               min="5"
               max="30"
             />
           </label>
 
           <label>
+            <p>Player Size: {boardSize}</p>
+            <input
+              type="range"
+              defaultValue={boardSize}
+              onChange={handleChangePlayerSize}
+              step="1"
+              min="12"
+              max="32"
+            />
+          </label>
+
+          <label>
             <p>Players Count: {playersCount}</p>
             <input
-              disabled={!!winner}
               type="range"
               defaultValue={playersCount}
               onChange={handleChangePlayersCount}
-              step="0.1"
+              step="1"
               min="2"
               max={maxPlayers}
             />
           </label>
-        </div>
-
-        <div>
-          <label>Frame {frame}</label>
+          <label>
+            <p>Speed: {speed.toFixed(0)}</p>
+            <input
+              type="range"
+              defaultValue={speed}
+              onChange={handleChangeSpeed}
+              step="1"
+              min="10"
+              max="2000"
+            />
+          </label>
         </div>
       </div>
-
-      {winner && <h1>Victory of {TypeEmojiMap[winner]}!</h1>}
-
-      <Board
-        playerSize={22}
-        size={boardSize}
-        players={players.current}
-      />
 
       <div className='buttons'>
         <button onClick={() => reset()}>Reset</button>
@@ -199,9 +231,6 @@ function App() {
         <button disabled={!!winner} onClick={() => step()}>Step</button>
         <button disabled={!!winner} onClick={() => resume()}>Resume</button>
       </div>
-
-      <textarea value={players.current.map(player => JSON.stringify(player, null, 2).replaceAll("\n", '') + "\n")}>
-      </textarea>
     </div>
   )
 }

@@ -26,7 +26,7 @@ export function useInterval(callback: Function, intervalMs = 1000) {
       stepRef.current = false;
     }, intervalMs);
     return () => clearInterval(handlerRef.current);
-  }, []);
+  }, [intervalMs]);
 
   return {
     pause,
